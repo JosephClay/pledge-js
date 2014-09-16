@@ -31,7 +31,7 @@
             return _protoSlice.call(arr);
         },
 
-        _isArray = nativeIsArray || function(obj) {
+        _isArray = Array.isArray || function(obj) {
             return _protoToString.call(obj) === '[object Array]';
         },
 
@@ -78,7 +78,7 @@
          * @type {Id}
          * @private
          */
-        this._id = _uniqId();
+        this._id = _uniqueId();
 
         /**
          * Registered functions organized by _PROMISE_CALL
