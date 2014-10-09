@@ -82,25 +82,27 @@
      * @class Promise
      */
     var Promise = function() {
+        var self = this;
+
         /**
          * @type {Id}
          * @private
          */
-        this._id = _uniqueId();
+        self._id = _uniqueId();
 
         /**
          * Registered functions organized by _PROMISE_CALL
          * @type {Object}
          * @private
          */
-        this._calls = {};
+        self._calls = {};
 
         /**
          * Current status
          * @type {Number}
          * @private
          */
-        this._status = _PROMISE_STATUS.idle;
+        self._status = _PROMISE_STATUS.idle;
     };
 
     Promise.STATUS = _PROMISE_STATUS;
@@ -151,7 +153,8 @@
          * @private
          */
         _pushCall: function(callType, func) {
-            var status = this._status;
+            var self = this,
+                status = self._status;
             if (status !== _PROMISE_STATUS.idle) {
                 if (
                     // done
@@ -161,13 +164,13 @@
                     // always
                     ((status === _PROMISE_STATUS.done || status === _PROMISE_STATUS.failed) && callType === _PROMISE_CALL.always)
                 ) {
-                    _defer(function() { func.call(null, this._firedArgs); });
-                    return this;
+                    _defer(function() { func.call(null, self._firedArgs); });
+                    return self;
                 }
             }
 
-            this._getCalls(callType).push(func);
-            return this;
+            self._getCalls(callType).push(func);
+            return self;
         },
 
         /**
@@ -176,12 +179,14 @@
          * @return {Promise}
          */
         notify: function() {
-            this._status = _PROMISE_STATUS.progressed;
+            var self = this;
 
-            var args = this._runPipe(arguments);
-            this._fire(_PROMISE_CALL.progress, args)._fire(_PROMISE_CALL.always, args);
+            self._status = _PROMISE_STATUS.progressed;
 
-            return this;
+            var args = self._runPipe(arguments);
+            self._fire(_PROMISE_CALL.progress, args)._fire(_PROMISE_CALL.always, args);
+
+            return self;
         },
 
         /**
@@ -191,20 +196,22 @@
          * @return {Promise}
          */
         reject: function() {
-            // If we've already called failed or done, go no further
-            if (this._status === _PROMISE_STATUS.failed || this._status === _PROMISE_STATUS.done) { return this; }
+            var self = this;
 
-            this._status = _PROMISE_STATUS.failed;
+            // If we've already called failed or done, go no further
+            if (self._status === _PROMISE_STATUS.failed || self._status === _PROMISE_STATUS.done) { return self; }
+
+            self._status = _PROMISE_STATUS.failed;
 
             // Never run the pipe on fail. Simply fail.
             // Running the pipe after an unexpected failure may lead to
             // more failures
-            this._fire(_PROMISE_CALL.fail, arguments)
+            self._fire(_PROMISE_CALL.fail, arguments)
                 ._fire(_PROMISE_CALL.always, arguments);
 
-            this._cleanup();
+            self._cleanup();
 
-            return this;
+            return self;
         },
 
         /**
@@ -214,18 +221,20 @@
          * @return {Promise}
          */
         resolve: function() {
+            var self = this;
+
             // If we've already called failed or done, go no further
-            if (this._status === _PROMISE_STATUS.failed || this._status === _PROMISE_STATUS.done) { return this; }
+            if (self._status === _PROMISE_STATUS.failed || self._status === _PROMISE_STATUS.done) { return self; }
 
-            this._status = _PROMISE_STATUS.done;
+            self._status = _PROMISE_STATUS.done;
 
-            var args = this._runPipe(arguments);
-            this._fire(_PROMISE_CALL.done, args)
+            var args = self._runPipe(arguments);
+            self._fire(_PROMISE_CALL.done, args)
                 ._fire(_PROMISE_CALL.always, args);
 
-            this._cleanup();
+            self._cleanup();
 
-            return this;
+            return self;
         },
 
         /**
@@ -234,8 +243,10 @@
          * @return {Boolean}
          */
         is: function(status) {
-            if (_isNumber(status)) { return (this._status === status); }
-            return (this._status === Promise.STATUS[status]);
+            var self = this;
+
+            if (_isNumber(status)) { return (self._status === status); }
+            return (self._status === Promise.STATUS[status]);
         },
 
         /**
@@ -254,14 +265,16 @@
          * @private
          */
         _fire: function(callType, args) {
-            this._firedArgs = args;
+            var self = this;
 
-            var calls = this._getCalls(callType),
+            self._firedArgs = args;
+
+            var calls = self._getCalls(callType),
                 idx = 0, length = calls.length;
             for (; idx < length; idx++) {
                 calls[idx].apply(null, args);
             }
-            return this;
+            return self;
         },
 
         /**
@@ -293,7 +306,8 @@
          * @private
          */
         _getCalls: function(type) {
-            return this._calls[_PROMISE_CALL_NAME[type]] || (this._calls[_PROMISE_CALL_NAME[type]] = []);
+            var self = this;
+            return self._calls[_PROMISE_CALL_NAME[type]] || (self._calls[_PROMISE_CALL_NAME[type]] = []);
         },
 
         /**
@@ -306,12 +320,14 @@
          * try to invoke the Promise directly)
          */
         call: function() {
-            var args = _slice(arguments);
+            var self = this,
+                args = _slice(arguments);
             args.splice(0, 1); // Throw away the context
-            this.notify.apply(this, args);
+            self.notify.apply(self, args);
         },
         apply: function(ctx, args) {
-            this.notify.apply(this, args);
+            var self = this;
+            self.notify.apply(self, args);
         },
 
         /**
@@ -320,9 +336,10 @@
          * @private
          */
         _cleanup: function() {
-            this._getCalls(_PROMISE_CALL.done).length = 0;
-            this._getCalls(_PROMISE_CALL.fail).length = 0;
-            this._getCalls(_PROMISE_CALL.always).length = 0;
+            var self = this;
+            self._getCalls(_PROMISE_CALL.done).length = 0;
+            self._getCalls(_PROMISE_CALL.fail).length = 0;
+            self._getCalls(_PROMISE_CALL.always).length = 0;
         },
 
         /**
@@ -331,14 +348,15 @@
          * @return {Object}
          */
         promise: function() {
+            var self = this;
             return {
-                done:     this.done.bind(this),
-                then:     this.then.bind(this),
-                fail:     this.fail.bind(this),
-                always:   this.always.bind(this),
-                finally:  this.finally.bind(this),
-                progress: this.progress.bind(this),
-                pipe:     this.pipe.bind(this)
+                done:     self.done.bind(self),
+                then:     self.then.bind(self),
+                fail:     self.fail.bind(self),
+                always:   self.always.bind(self),
+                finally:  self.finally.bind(self),
+                progress: self.progress.bind(self),
+                pipe:     self.pipe.bind(self)
             };
         },
 
@@ -347,14 +365,15 @@
          * @return {String}
          */
         toString: function() {
+            var self = this;
             return 'promise-js - ' + [
-                'id: '       + this._id,
-                'status: '   + _invert(_PROMISE_STATUS)[this._status],
-                'done: '     + this._getCalls(_PROMISE_CALL.done).length,
-                'fail: '     + this._getCalls(_PROMISE_CALL.fail).length,
-                'always: '   + this._getCalls(_PROMISE_CALL.always).length,
-                'progress: ' + this._getCalls(_PROMISE_CALL.progress).length,
-                'pipe: '     + this._getCalls(_PROMISE_CALL.pipe).length
+                'id: '       + self._id,
+                'status: '   + _invert(_PROMISE_STATUS)[self._status],
+                'done: '     + self._getCalls(_PROMISE_CALL.done).length,
+                'fail: '     + self._getCalls(_PROMISE_CALL.fail).length,
+                'always: '   + self._getCalls(_PROMISE_CALL.always).length,
+                'progress: ' + self._getCalls(_PROMISE_CALL.progress).length,
+                'pipe: '     + self._getCalls(_PROMISE_CALL.pipe).length
             ].join(', ');
         }
     };
@@ -378,7 +397,7 @@
          * Store our promise
          * @type {Promise}
          */
-        this._p = null;
+        this._p;
 
         /**
          * Store the promises being listened to
@@ -396,12 +415,14 @@
          * @return {Promise}
          */
         init: function() {
-            this._events = _isArray(arguments[0]) ? arguments[0] : _slice(arguments);
-            this._subscribe();
+            var self = this;
+
+            self._events = _isArray(arguments[0]) ? arguments[0] : _slice(arguments);
+            self._subscribe();
 
             var promise = new Promise();
-            promise.then = function() { this.done.apply(this, arguments); };
-            this._p = promise;
+            promise.then = function() { self.done.apply(self, arguments); };
+            self._p = promise;
             return promise; // Return the promise so that it can be subscribed to
         },
 
@@ -411,9 +432,10 @@
          * @private
          */
         _subscribe: function() {
-            var check = this._checkStatus.bind(this),
-                fireProgress = this._fireProgress.bind(this),
-                events = this._events,
+            var self = this,
+                check = self._checkStatus.bind(self),
+                fireProgress = self._fireProgress.bind(self),
+                events = self._events,
                 idx = events.length;
             while (idx--) {
                 events[idx].done(check).fail(check).progress(fireProgress);
@@ -426,7 +448,8 @@
          * @private
          */
         _checkStatus: function() {
-            var events = this._events, evt,
+            var self = this,
+                events = self._events, evt,
                 total = events.length,
                 done = 0, failed = 0,
                 idx = total;
@@ -438,7 +461,7 @@
                 if (evt.status() === Promise.STATUS.done) { done += 1; continue; }
                 if (evt.status() === Promise.STATUS.failed) { failed += 1; continue; }
             }
-            this._fire(total, done, failed, arguments);
+            self._fire(total, done, failed, arguments);
         },
 
         /**
