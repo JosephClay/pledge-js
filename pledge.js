@@ -49,7 +49,7 @@
          * what the promise's status is
          * @readonly
          * @enum {Number}
-         * @alias Promise.STATUS
+         * @alias _PROMISE_STATUS
          */
     var _PROMISE_STATUS = {
             idle:       0,
@@ -62,7 +62,7 @@
          * what kind of functions to call
          * @readonly
          * @enum {Number}
-         * @alias Promise.CALL
+         * @alias _PROMISE_CALL
          */
         _PROMISE_CALL = {
             done:     0,
@@ -101,9 +101,6 @@
          */
         self._status = _PROMISE_STATUS.idle;
     };
-
-    Promise.STATUS = _PROMISE_STATUS;
-    Promise.CALL = _PROMISE_CALL;
 
     Promise.prototype = /** @lends Promise# */ {
         constructor: Promise,
@@ -144,7 +141,7 @@
 
         /**
          * Pushes a function into a call array by type
-         * @param  {Promise.CALL} callType
+         * @param  {_PROMISE_CALL} callType
          * @param  {Function} func
          * @return {Promise}
          * @private
@@ -235,18 +232,6 @@
         },
 
         /**
-         * Determine if the promise is in the status provided
-         * @param  {String|Promise.STATUS}  status key or STATUS value
-         * @return {Boolean}
-         */
-        is: function(status) {
-            var self = this;
-
-            if (_isNumber(status)) { return (self._status === status); }
-            return (self._status === Promise.STATUS[status]);
-        },
-
-        /**
          * Returns the status of the Promise
          * @return {Number} STATUS
          */
@@ -256,7 +241,7 @@
 
         /**
          * Fires a _PROMISE_CALL type with the provided arguments
-         * @param  {Promise.CALL} callType
+         * @param  {_PROMISE_CALL} callType
          * @param  {Array} args
          * @return {Promise}
          * @private
@@ -298,7 +283,7 @@
          * Lazy generate arrays based on type to
          * avoid creating disposable arrays for
          * methods that aren't going to be used/called
-         * @param  {Promise.CALL} type
+         * @param  {_PROMISE_CALL} type
          * @return {Array}
          * @private
          */
@@ -454,9 +439,9 @@
                 evt = events[idx];
                 // We're waiting for everything to complete
                 // so if there's an item with no status, stop
-                if (evt.status() === Promise.STATUS.idle) { return; }
-                if (evt.status() === Promise.STATUS.done) { done += 1; continue; }
-                if (evt.status() === Promise.STATUS.failed) { failed += 1; continue; }
+                if (evt.status() === _PROMISE_STATUS.idle) { return; }
+                if (evt.status() === _PROMISE_STATUS.done) { done += 1; continue; }
+                if (evt.status() === _PROMISE_STATUS.failed) { failed += 1; continue; }
             }
             self._fire(total, done, failed, arguments);
         },
@@ -482,7 +467,7 @@
             // If everything fired, but they're not all one thing, then just call always.
             // The only way to do that without exposing a public function in Promise is
             // to use the private _fire event
-            if ((done + failed) === total) { return promise._fire(Promise.CALL.always, args); }
+            if ((done + failed) === total) { return promise._fire(_PROMISE_CALL.always, args); }
         },
 
         /**
