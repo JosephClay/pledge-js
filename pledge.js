@@ -78,7 +78,7 @@
      * API based on {@link https://api.jquery.com/promise/ jQuery.promises}
      * @class Promise
      */
-    function Promise(func) {
+    var Promise = function(func) {
         var self = this;
 
         /**
@@ -108,7 +108,7 @@
         if (func) {
             func(self.resolve.bind(self), self.reject.bind(self));
         }
-    }
+    };
 
     Promise.prototype = /** @lends Promise# */ {
         constructor: Promise,
@@ -384,7 +384,7 @@
      * they only see a promise (with a .then() method),
      * but all the magic happens here
      */
-    function When() {
+    var When = function() {
         /**
          * Store our promise
          * @type {Promise}
@@ -396,7 +396,7 @@
          * @type {Array.<Promise>}
          */
         this._events = [];
-    }
+    };
 
     When.prototype = {
         constructor: When,
@@ -407,15 +407,15 @@
          * @return {Promise}
          */
         init: function() {
-            var self = this;
+            var self = this,
+                args = arguments[0];
 
-            self._events = _isArray(arguments[0]) ? arguments[0] : _slice(arguments);
+            self._events = _isArray(args[0]) ? args[0] : _slice(args);
             self._subscribe();
 
             var promise = new Promise();
-            promise.then = function() { self.done.apply(self, arguments); };
             self._p = promise;
-            return promise; // Return the promise so that it can be subscribed to
+            return promise.promise(); // Return the promise so that it can be subscribed to
         },
 
         /**
@@ -430,7 +430,9 @@
                 events = self._events,
                 idx = events.length;
             while (idx--) {
-                events[idx].done(check).fail(check).progress(fireProgress);
+                if (events[idx]) {
+                    events[idx].done(check).fail(check).progress(fireProgress);
+                }
             }
         },
 
@@ -491,8 +493,8 @@
         }
     };
 
-    var api = function() {
-        return new Promise();
+    var api = function(func) {
+        return new Promise(func);
     };
     api.when = function() {
         var w = new When();
