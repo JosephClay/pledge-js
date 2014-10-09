@@ -78,7 +78,7 @@
      * API based on {@link https://api.jquery.com/promise/ jQuery.promises}
      * @class Promise
      */
-    var Promise = function() {
+    var Promise = function(func) {
         var self = this;
 
         /**
@@ -100,6 +100,14 @@
          * @private
          */
         self._status = _PROMISE_STATUS.idle;
+
+        /**
+         * Allow an ES6 style call
+         * (only if the function is provided)
+         */
+        if (func) {
+            func(self.resolve.bind(self), self.reject.bind(self));
+        }
     };
 
     Promise.prototype = /** @lends Promise# */ {
