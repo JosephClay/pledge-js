@@ -397,7 +397,7 @@
          * Store our promise
          * @type {Promise}
          */
-        this._p;
+        // this._p;
 
         /**
          * Store the promises being listened to
