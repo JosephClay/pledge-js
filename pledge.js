@@ -143,6 +143,21 @@
          * @private
          */
         _pushCall: function(callType, func) {
+            var status = this._status;
+            if (status !== _PROMISE_STATUS.idle) {
+                if (
+                    // done
+                    (status === _PROMISE_STATUS.done   && callType === _PROMISE_CALL.done) ||
+                    // fail
+                    (status === _PROMISE_STATUS.failed && callType === _PROMISE_CALL.fail) ||
+                    // always
+                    ((status === _PROMISE_STATUS.done || status === _PROMISE_STATUS.failed) && callType === _PROMISE_CALL.always)
+                ) {
+                    func.call(null, this._firedArgs);
+                    return this;
+                }
+            }
+
             this._getCalls(callType).push(func);
             return this;
         },
@@ -231,6 +246,8 @@
          * @private
          */
         _fire: function(callType, args) {
+            this._firedArgs = args;
+
             var calls = this._getCalls(callType),
                 idx = 0, length = calls.length;
             for (; idx < length; idx++) {
