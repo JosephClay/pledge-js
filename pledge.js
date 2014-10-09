@@ -29,19 +29,19 @@
 
         _idCounter = 0,
 
-        _protoToString = Object.prototype.toString,
-        _protoSlice = Array.prototype.slice,
+        _nativeToString = ({}).toString,
+        _nativeSlide = ([]).slice,
 
         _slice = function(arr) {
-            return _protoSlice.call(arr);
+            return _nativeSlide.call(arr);
         },
 
         _isArray = Array.isArray || function(obj) {
-            return _protoToString.call(obj) === '[object Array]';
+            return _nativeToString.call(obj) === '[object Array]';
         },
 
         _isNumber = function(obj) {
-            return _protoToString.call(obj) === '[object Number]';
+            return _nativeToString.call(obj) === '[object Number]';
         };
 
         /**
