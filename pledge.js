@@ -78,7 +78,7 @@
      * API based on {@link https://api.jquery.com/promise/ jQuery.promises}
      * @class Promise
      */
-    var Promise = function(func) {
+    function Promise(func) {
         var self = this;
 
         /**
@@ -108,7 +108,7 @@
         if (func) {
             func(self.resolve.bind(self), self.reject.bind(self));
         }
-    };
+    }
 
     Promise.prototype = /** @lends Promise# */ {
         constructor: Promise,
@@ -384,7 +384,7 @@
      * they only see a promise (with a .then() method),
      * but all the magic happens here
      */
-    var When = function() {
+    function When() {
         /**
          * Store our promise
          * @type {Promise}
@@ -396,7 +396,7 @@
          * @type {Array.<Promise>}
          */
         this._events = [];
-    };
+    }
 
     When.prototype = {
         constructor: When,
