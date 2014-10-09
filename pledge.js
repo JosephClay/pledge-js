@@ -28,9 +28,6 @@
         },
 
         _idCounter = 0,
-        _uniqueId = function() {
-            return ++_idCounter;
-        },
 
         _protoToString = Object.prototype.toString,
         _protoSlice = Array.prototype.slice,
@@ -88,7 +85,7 @@
          * @type {Id}
          * @private
          */
-        self._id = _uniqueId();
+        self._id = ++_idCounter;
 
         /**
          * Registered functions organized by _PROMISE_CALL
