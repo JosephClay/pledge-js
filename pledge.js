@@ -126,6 +126,7 @@
          * @return {Promise}
          */
         fail: function(func) { return this._pushCall(_PROMISE_CALL.fail, func); },
+        catch: function(func) { return this._pushCall(_PROMISE_CALL.fail, func); },
         /**
          * Register a call that fires after done or fail
          * @param  {Function} func
@@ -343,6 +344,7 @@
                 done:     self.done.bind(self),
                 then:     self.then.bind(self),
                 fail:     self.fail.bind(self),
+                catch:    self.catch.bind(self),
                 always:   self.always.bind(self),
                 finally:  self.finally.bind(self),
                 progress: self.progress.bind(self),
