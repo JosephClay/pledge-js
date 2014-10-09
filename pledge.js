@@ -21,7 +21,7 @@
             return result;
         },
 
-        defer = root.process && root.process.nextTick ? function(callback) {
+        _defer = root.process && root.process.nextTick ? function(callback) {
             root.process.nextTick(callback);
         } : function(callback) {
             setTimeout(callback, 0);
@@ -161,7 +161,7 @@
                     // always
                     ((status === _PROMISE_STATUS.done || status === _PROMISE_STATUS.failed) && callType === _PROMISE_CALL.always)
                 ) {
-                    defer(function() { func.call(null, this._firedArgs); });
+                    _defer(function() { func.call(null, this._firedArgs); });
                     return this;
                 }
             }
