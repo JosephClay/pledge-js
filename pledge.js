@@ -10,13 +10,21 @@
 
 })('pledge', function(undefined) {
 
-    var _invert = function(obj) {
+    var root = this,
+
+        _invert = function(obj) {
             var result = {},
                 key;
             for (key in obj) {
                 result[obj[key]] = key;
             }
             return result;
+        },
+
+        defer = root.process && root.process.nextTick ? function(callback) {
+            root.process.nextTick(callback);
+        } : function(callback) {
+            setTimeout(callback, 0);
         },
 
         _idCounter = 0,
@@ -153,7 +161,7 @@
                     // always
                     ((status === _PROMISE_STATUS.done || status === _PROMISE_STATUS.failed) && callType === _PROMISE_CALL.always)
                 ) {
-                    func.call(null, this._firedArgs);
+                    defer(function() { func.call(null, this._firedArgs); });
                     return this;
                 }
             }
