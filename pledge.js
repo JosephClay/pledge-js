@@ -167,7 +167,7 @@
                     // always
                     ((status === _PROMISE_STATUS.done || status === _PROMISE_STATUS.failed) && callType === _PROMISE_CALL.always)
                 ) {
-                    _defer(function() { func.call(null, self._firedArgs); });
+                    _defer(function() { func.call(null, self._arg); });
                     return self;
                 }
             }
@@ -181,12 +181,12 @@
          * Promise.progress
          * @return {Promise}
          */
-        notify: function() {
+        notify: function(val) {
             var self = this;
 
             self._status = _PROMISE_STATUS.progressed;
 
-            var args = self._runPipe(arguments);
+            var args = self._runPipe(val);
             self._fire(_PROMISE_CALL.progress, args)._fire(_PROMISE_CALL.always, args);
 
             return self;
@@ -198,7 +198,7 @@
          * Promise.always
          * @return {Promise}
          */
-        reject: function() {
+        reject: function(val) {
             var self = this;
 
             // If we've already called failed or done, go no further
@@ -209,8 +209,8 @@
             // Never run the pipe on fail. Simply fail.
             // Running the pipe after an unexpected failure may lead to
             // more failures
-            self._fire(_PROMISE_CALL.fail, arguments)
-                ._fire(_PROMISE_CALL.always, arguments);
+            self._fire(_PROMISE_CALL.fail, val)
+                ._fire(_PROMISE_CALL.always, val);
 
             self._cleanup();
 
@@ -223,7 +223,7 @@
          * Promise.always
          * @return {Promise}
          */
-        resolve: function() {
+        resolve: function(val) {
             var self = this;
 
             // If we've already called failed or done, go no further
@@ -231,9 +231,9 @@
 
             self._status = _PROMISE_STATUS.done;
 
-            var args = self._runPipe(arguments);
-            self._fire(_PROMISE_CALL.done, args)
-                ._fire(_PROMISE_CALL.always, args);
+            var arg = self._runPipe(val);
+            self._fire(_PROMISE_CALL.done, arg)
+                ._fire(_PROMISE_CALL.always, arg);
 
             self._cleanup();
 
@@ -251,19 +251,19 @@
         /**
          * Fires a _PROMISE_CALL type with the provided arguments
          * @param  {_PROMISE_CALL} callType
-         * @param  {Array} args
+         * @param  {*} arg
          * @return {Promise}
          * @private
          */
-        _fire: function(callType, args) {
+        _fire: function(callType, arg) {
             var self = this;
 
-            self._firedArgs = args;
+            self._arg = arg;
 
             var calls = self._getCalls(callType),
                 idx = 0, length = calls.length;
             for (; idx < length; idx++) {
-                calls[idx].apply(null, args);
+                calls[idx].call(null, arg);
             }
             return self;
         },
@@ -273,19 +273,19 @@
          * to pass to the next pipe. Returns the
          * arguments to used by the calling method
          * to proceed to call other methods (e.g. done/fail/always)
-         * @param  {Array} args
-         * @return {Array} args
+         * @param  {*} arg
+         * @return {*} arg
          * @private
          */
-        _runPipe: function(args) {
+        _runPipe: function(arg) {
             var pipes = this._getCalls(_PROMISE_CALL.pipe),
-                idx = 0, length = pipes.length, val;
+                idx = 0, length = pipes.length,
+                val = arg;
             for (; idx < length; idx++) {
-                val = pipes[idx].apply(null, args);
-                if (val !== undefined) { args = [val]; }
+                val = pipes[idx].call(null, val);
             }
 
-            return args;
+            return val;
         },
 
         /**
@@ -414,8 +414,10 @@
             self._subscribe();
 
             var promise = new Promise();
+            if (self._events.length === 0) { promise.resolve([]); }
             self._p = promise;
-            return promise.promise(); // Return the promise so that it can be subscribed to
+
+            return promise; // Return the promise so that it can be subscribed to
         },
 
         /**
@@ -455,7 +457,7 @@
                 if (evt.status() === _PROMISE_STATUS.done) { done += 1; continue; }
                 if (evt.status() === _PROMISE_STATUS.failed) { failed += 1; continue; }
             }
-            self._fire(total, done, failed, arguments);
+            self._fire(total, done, failed);
         },
 
         /**
@@ -464,17 +466,26 @@
          * @param  {Number}    total  total number of promises
          * @param  {Number}    done   promises in a done state
          * @param  {Number}    failed promises in a failed state
-         * @param  {Arguments} args   arguments to pass
          * @private
          */
-        _fire: function(total, done, failed, args) {
-            var promise = this._p; // Our promise
+        _fire: function(total, done, failed) {
+            var self = this,
+                promise = self._p, // Our promise
+                events = self._events;
+
+            var args = [],
+                idx = 0, length = events.length;
+            for (; idx < length; idx++) {
+                if (events[idx]) {
+                    args[idx] = events[idx]._arg;
+                }
+            }
 
             // If everything completed, call done (this will call always)
-            if (done === total) { return promise.resolve.apply(promise, args); }
+            if (done === total) { return promise.resolve.call(promise, args); }
 
             // If everything failed, call fail (this will call always)
-            if (failed === total) { return promise.reject.apply(promise, args); }
+            if (failed === total) { return promise.reject.call(promise, args); }
 
             // If everything fired, but they're not all one thing, then just call always.
             // The only way to do that without exposing a public function in Promise is
@@ -496,7 +507,7 @@
     var api = function(func) {
         return new Promise(func);
     };
-    api.when = function() {
+    api.when = api.all = function() {
         var w = new When();
         return w.init.apply(w, arguments);
     };
